@@ -1,0 +1,17 @@
+{
+  "name": "kon",
+  "version": "0.0.1",
+  "description": "testing for my atom packages",
+  "main": "index.js",
+  "scripts": {
+    "test": "tap test/*.js"
+  },
+  "keywords": [
+    "test"
+  ],
+  "author": "akonwi",
+  "license": "ISC",
+  "devDependencies": {
+    "tap": "6.1.1"
+  }
+}

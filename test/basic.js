@@ -2,90 +2,113 @@ var tap = require('tap')
 var kon = require('../index')
 
 tap.test("kon::test that passes", function(t) {
-  t.plan(2)
-
-  var ktest = kon.test("this is a test", function(k) {
+  var ktest = kon.test("this is a passing test", function(k) {
     return k.pass()
   })
 
-  t.is(ktest.kname, "this is a test", "ktest.kname should be what was passed to kon.test")
-  t.ok(ktest(), "ktest passes")
-})
+  var result = ktest()
 
-tap.test("kon::test that fails", function(t) {
-  t.plan(1)
-
-  var ktest = kon.test("this is a test", function(k) {
-    return k.fail()
-  })
-
-  t.notOk(ktest(), "ktest fails")
-})
-
-tap.test("kon::ok checks whether something is not false|undefined|null", function(t) {
-  t.ok(kon.ok(true), "kon.ok returns true for the boolean true")
-  t.ok(kon.ok(1), "kon.ok returns true for the number 1")
-  t.ok(kon.ok({}), "kon.ok returns true for an object")
-  t.ok(kon.ok(''), "kon.ok returns true for an empty string")
-  t.notOk(kon.ok(undefined), "kon.ok returns false for undefined")
-  t.notOk(kon.ok(null), "kon.ok returns false for null")
-  t.notOk(kon.ok(false), "kon.ok returns false for the boolean false")
+  t.is(result.name, "this is a passing test", "result.kname should be what was passed to kon.test")
+  t.true(result.pass, "result.pass should be true")
   t.end()
 })
 
-tap.test("kon::willBeOk checks if a promise resolves to something that is not false|undefined|null", function(t) {
-  t.plan(14)
-  kon.willBeOk(true).then(function(ok) {
-    t.ok(ok, "kon.willBeOk resolves to true for the boolean true")
+tap.test("kon::test that fails", function(t) {
+  var ktest = kon.test("this is a failing test", function(k) {
+    return k.fail()
   })
-  kon.willBeOk(Promise.resolve(true)).then(function(ok) {
-    t.ok(ok, "kon.willBeOk resolves to true for a promise that resolves to true")
-  })
-  kon.willBeOk(1).then(function(ok) {
-    t.ok(ok, "kon.willBeOk resolves to true for a number")
-  })
-  kon.willBeOk(Promise.resolve(1)).then(function(ok) {
-    t.ok(ok, "kon.willBeOk resolves to true for a promise that resolves to a number")
-  })
-  kon.willBeOk({}).then(function(ok) {
-    t.ok(ok, "kon.willBeOk resolves to true for an object")
-  })
-  kon.willBeOk(Promise.resolve({})).then(function(ok) {
-    t.ok(ok, "kon.willBeOk resolves to true for a promise that resolves to an object")
-  })
-  kon.willBeOk('').then(function(ok) {
-    t.ok(ok, "kon.willBeOk resolves to true for an empty string")
-  })
-  kon.willBeOk(Promise.resolve('')).then(function(ok) {
-    t.ok(ok, "kon.willBeOk resolves to true for a promise that resolves to a string")
-  })
-  kon.willBeOk(undefined).then(function(ok) {
-    t.notOk(ok, "kon.willBeOk resolves to false for undefined")
-  })
-  kon.willBeOk(Promise.resolve(undefined)).then(function(ok) {
-    t.notOk(ok, "kon.willBeOk resolves to false for a promise that resolves to undefined")
-  })
-  kon.willBeOk(null).then(function(ok) {
-    t.notOk(ok, "kon.willBeOk resolves to false for null")
-  })
-  kon.willBeOk(Promise.resolve(null)).then(function(ok) {
-    t.notOk(ok, "kon.willBeOk resolves to false for a promise that resolves to null")
-  })
-  kon.willBeOk(false).then(function(ok) {
-    t.notOk(ok, "kon.willBeOk resolves to false for the boolean false")
-  })
-  kon.willBeOk(Promise.resolve(false)).then(function(ok) {
-    t.notOk(ok, "kon.willBeOk resolves to false for a promise that resolves to false")
-  })
+
+  var result = ktest()
+
+  t.is(result.name, "this is a failing test", "result.kname should be what was passed to kon.test")
+  t.false(result.pass, "result.pass should be false")
+  t.end()
 })
 
-tap.test("ktest does what it is supposed to", function(t) {
-  var ktest = kon.test("a passing test with promises", function(k) {
-    return k.willBeOk(Promise.resolve(true));
+tap.test("kon::ok checks whether something is not false|undefined|null", function(t) {
+  var passingKtest = kon.test("kon::ok checks for existence", function(k) {
+    k.ok(true, "kon.ok returns true for the boolean true")
+    k.ok(1, "kon.ok returns true for the number 1")
+    k.ok({}, "kon.ok returns true for an object")
+    k.ok('', "kon.ok returns true for an empty string")
+  })
+  t.true(passingKtest().pass, "kon::ok works")
+
+  var failingKtest = kon.test("kon::ok fails for non-existence and not true things ", function(k) {
+    k.ok(undefined, "kon.ok returns false for undefined")
+    k.ok(null, "kon.ok returns false for null")
+    k.ok(false, "kon.ok returns false for the boolean false")
+  })
+  var failingResult = failingKtest()
+  t.false(failingResult.pass, "kon::ok works against false-like things")
+  t.strictSame(failingResult.failures, {
+    "kon.ok returns false for undefined": { subject: undefined },
+    "kon.ok returns false for null": { subject: null },
+    "kon.ok returns false for the boolean false": { subject: false }
+  }, "ktest contains info about failing assertions")
+
+  t.end()
+})
+
+tap.test("kon::notOk checks whether something is actually false|undefined|null", function(t) {
+  var passingKtest = kon.test("kon::notOk checks for non-existence and not true", function(k) {
+    k.notOk(undefined, "kon.notOk returns true for undefined")
+    k.notOk(null, "kon.notOk returns true for null")
+    k.notOk(false, "kon.notOk returns true for the boolean false")
+  })
+  t.true(passingKtest().pass, "kon::notOk works")
+
+  var failingKtest = kon.test("kon::notOk fails for things that exist ", function(k) {
+    k.notOk(true, "kon.notOk returns false for the boolean true")
+    k.notOk(1, "kon.notOk returns false for numbers")
+    k.notOk({}, "kon.notOk returns false for objects")
+    k.notOk('', "kon.notOk returns false for strings")
+  })
+  var failingResult = failingKtest()
+  t.false(failingResult.pass, "kon::notOk works against existing things")
+  t.strictSame(failingResult.failures, {
+    "kon.notOk returns false for the boolean true": { subject: true },
+    "kon.notOk returns false for numbers": { subject: 1 },
+    "kon.notOk returns false for objects": { subject: {} },
+    "kon.notOk returns false for strings": { subject: '' }
+  }, "ktest contains info about failing assertions")
+  t.end()
+})
+
+tap.test("kon::willBeOk checks if a promise/thing resolves to something that is not false|undefined|null", function(t) {
+  t.plan(6)
+
+  var ktest = kon.test("kon::willBeOk", function(k) {
+    k.willBeOk(true)
+  })
+  ktest().promise.then(function(result) {
+    t.true(result.pass, "the ktest with ::willBeOk(true) passed")
   })
 
-  ktest().then(function(ok) {
-    t.ok(ok, "ktest resolved to a pass")
-    t.end()
+  var failing = kon.test("kon::willBeOk", function(k) {
+    k.willBeOk(false, "willBeOk evaluates as false for the boolean false")
+  })
+  failing().promise.then(function(result) {
+    t.false(result.pass, "the ktest with a failure and promise failed")
+    t.strictSame(result.failures, {
+      "willBeOk evaluates as false for the boolean false": { subject: false }
+    }, "ktest() promised result contains info about failing assertions")
+  })
+
+  var ktestWithPromise = kon.test("kon::willBeOk", function(k) {
+    k.willBeOk(Promise.resolve(true))
+  })
+  ktestWithPromise().promise.then(function(result) {
+    t.true(result.pass, "the ktest with willBeOk(Promise.resolve(true)) passed")
+  })
+
+  var failingktestWithPromise = kon.test("kon::willBeOk", function(k) {
+    k.willBeOk(Promise.resolve(false), "k.willBeOk(Promise.resolve(false)) should not pass")
+  })
+  failingktestWithPromise().promise.then(function(result) {
+    t.false(result.pass, "the ktest with willBeOk(Promise.resolve(false)) failed")
+    t.strictSame(result.failures, {
+      "k.willBeOk(Promise.resolve(false)) should not pass": { subject: false }
+    }, "ktest() promised result contains info about failing assertions")
   })
 })

@@ -1,6 +1,3 @@
-willBeOk = function(thing) {
-}
-
 createK = function(name, result) {
   result.name = name
   result.pass = true
